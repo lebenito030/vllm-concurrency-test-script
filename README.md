@@ -6,6 +6,14 @@
 
 ## 使用说明
 
+安装依赖：
+
+```bash
+pip install aiohttp
+# 网不好用下面这个
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple aiohttp
+```
+
 只需要修改以下配置项，然后 `python main.py` 运行即可。
 
 - concurrency: 并发数，位于 111 行中
