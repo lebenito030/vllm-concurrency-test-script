@@ -5,7 +5,7 @@ import statistics
 import json
 from typing import List, Dict, Any
 
-async def send_request(session: aiohttp.ClientSession, url: str, prompt: str, request_id: int) -> Dict[str, Any]:
+async def send_request(session: aiohttp.ClientSession, url: str, prompt: str, request_id: int, api_key: str) -> Dict[str, Any]:
     """Send a request to the vLLM API and track performance metrics."""
     start_time = time.time()
     payload = {
@@ -16,7 +16,12 @@ async def send_request(session: aiohttp.ClientSession, url: str, prompt: str, re
     }
     
     try:
-        async with session.post(url, json=payload) as response:
+        # Add headers with API key
+        headers = {}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+                    
+        async with session.post(url, json=payload, headers=headers) as response:
             if response.status != 200:
                 error_text = await response.text()
                 return {
@@ -55,13 +60,13 @@ async def send_request(session: aiohttp.ClientSession, url: str, prompt: str, re
             "latency": time.time() - start_time
         }
 
-async def run_concurrency_test(url: str, concurrency: int, prompt: str) -> Dict[str, Any]:
+async def run_concurrency_test(url: str, concurrency: int, prompt: str, api_key: str) -> Dict[str, Any]:
     """Run a concurrency test with the specified number of concurrent requests."""
     print(f"Starting test with {concurrency} concurrent requests...")
     
     start_time = time.time()
     async with aiohttp.ClientSession() as session:
-        tasks = [send_request(session, url, prompt, i) for i in range(concurrency)]
+        tasks = [send_request(session, url, prompt, i, api_key) for i in range(concurrency)]
         results = await asyncio.gather(*tasks)
     total_time = time.time() - start_time
     
@@ -109,6 +114,7 @@ async def main():
     # Configuration
     url = "http://localhost:8000/v1/chat/completions"  # Update with your vLLM API endpoint
     concurrency = 500
+    api_key = "your_api_key_here"  # Replace with your actual API key
     
     # Use a consistent prompt for all requests
     prompt = """
@@ -117,7 +123,7 @@ async def main():
     """
     
     # Run the test
-    results = await run_concurrency_test(url, concurrency, prompt)
+    results = await run_concurrency_test(url, concurrency, prompt, api_key)
     
     # Print and save results
     print("\n==== Test Results ====")
